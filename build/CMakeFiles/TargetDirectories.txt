@@ -1,0 +1,3 @@
+D:/kursovaya_C++/build/CMakeFiles/kursovaya_C++.dir
+D:/kursovaya_C++/build/CMakeFiles/edit_cache.dir
+D:/kursovaya_C++/build/CMakeFiles/rebuild_cache.dir
