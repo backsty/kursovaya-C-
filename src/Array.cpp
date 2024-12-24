@@ -2,9 +2,14 @@
 #include "ListElem.h"
 #include <iostream>
 #include <fstream>
+#include <cstring>
+#include <stdexcept>
 
+
+// 1. Конструкторы и деструктор
 template <class T>
 Array<T>::Array() : Arr(nullptr), MaxCount(0), CurSize(0), ArrSize(0), pointer(0) {}
+
 
 template <class T>
 Array<T>::Array(int size, int maxSize)
@@ -18,6 +23,7 @@ Array<T>::Array(int size, int maxSize)
         Arr[i] = nullptr;
     }
 }
+
 
 template <class T>
 Array<T>::~Array() {
@@ -36,7 +42,90 @@ Array<T>::~Array() {
     }
 }
 
-// Функция простого добавления элемента в список
+
+// 2. Вспомогательные приватные методы
+template <class T>
+ListElem<T>* Array<T>::InputNewElement() {
+    int count;
+    std::cout << "Enter number of elements: ";
+    std::cin >> count;
+    if (count <= 0) {
+        std::cout << "Invalid number of elements" << std::endl;
+        return nullptr;
+    }
+
+    ListElem<T>* NewElem = nullptr;
+    try {
+        NewElem = new ListElem<T>;
+        NewElem->countObj = count;
+        NewElem->objects = new T[count];
+        NewElem->pNext = nullptr;
+
+        for (int i = 0; i < count; i++) {
+            NewElem->objects[i] = new char[100];
+            std::cout << "Enter element #" << (i + 1) << ": ";
+            std::cin >> NewElem->objects[i];
+        }
+        return NewElem;
+    }
+    catch (std::bad_alloc& e) {
+        if (NewElem) {
+            if (NewElem->objects) {
+                for (int i = 0; i < count; i++) {
+                    delete[] NewElem->objects[i];
+                }
+                delete[] NewElem->objects;
+            }
+            delete NewElem;
+        }
+        std::cerr << "Memory allocation error: " << e.what() << std::endl;
+        return nullptr;
+    }
+}
+
+
+template <class T>
+bool Array<T>::IsListFull(int index) {
+    if (index >= ArrSize) return true;
+
+    int count = 0;
+    ListElem<T>* current = Arr[index];
+    while (current != nullptr) {
+        count += current->countObj;
+        current = current->pNext;
+    }
+    return count >= MaxCount;
+}
+
+
+template <class T>
+bool Array<T>::ResizeArray(int newSize) {
+    if (newSize <= ArrSize) return false;
+    
+    try {
+        ListElem<T>** newArr = new ListElem<T>*[newSize];
+        
+        for(int i = 0; i < ArrSize; i++) {
+            newArr[i] = Arr[i];
+        }
+        
+        for(int i = ArrSize; i < newSize; i++) {
+            newArr[i] = nullptr;
+        }
+        
+        delete[] Arr;
+        Arr = newArr;
+        ArrSize = newSize;
+        return true;
+    }
+    catch(std::bad_alloc& e) {
+        return false;
+    }
+}
+
+
+
+// 3. Основные операции с элементами
 template <class T>
 void Array<T>::AddElem() {
     if (pointer >= ArrSize) {
@@ -44,41 +133,9 @@ void Array<T>::AddElem() {
         return;
     }
 
-    // Ввод кол-во элементов
-    int count = 0;
-    std::cout << "Enter count of elements: ";
-    std::cin >> count;
+    ListElem<T>* NewElem = InputNewElement();
+    if (!NewElem) return;
 
-    if (count <= 0) {
-        std::cout << "Invalid count of elements" << std::endl;
-        return;
-    }
-
-    ListElem<T>* NewElem;
-    try {
-        NewElem = new ListElem<T>;
-        NewElem->countObj = count;
-        NewElem->objects = new T[count];
-        NewElem->pNext = nullptr;
-
-        for (int i = 0; i < count; ++i) {
-            NewElem->objects[i] = new char[100];
-            std::cout << "Enter element #" << (i + 1) << ": ";
-            std::cin >> NewElem->objects[i];
-        }
-    } catch (std::bad_alloc& e) {
-        std::cerr << "Memory allocation failed: " << e.what() << std::endl;
-        if (NewElem) {
-            for (int i = 0; i < count; ++i) {
-                delete[] NewElem->objects[i];
-            }
-            delete[] NewElem->objects;
-            delete NewElem;
-        }
-        return;
-    }
-
-    // Добавление нового элемента в массив
     if (Arr[pointer] == nullptr) {
         Arr[pointer] = NewElem;
     } else {
@@ -89,7 +146,6 @@ void Array<T>::AddElem() {
         cur->pNext = NewElem;
     }
 
-    // Обновление указателей
     CurSize++;
     if (CurSize >= MaxCount) {
         pointer++;
@@ -97,515 +153,583 @@ void Array<T>::AddElem() {
     }
 }
 
-// Функция сортировки элементов
-template <class T>
-void Array<T>::Change(T a[], int first, int second) {
-    if (first == second) return;
-    T temp = a[second];
-    a[second] = a[first];
-    a[first] = temp;
-}
 
-template <class T>
-int Array<T>::FindMax(T a[], int max) {
-    int imax = 0;
-    for (int i = 0; i < max; i++) {
-        if (a[imax] < a[i]) imax = i;
-    }
-    return imax;
-}
-
-template <class T>
-void Array<T>::Sort(T b[], int max) {
-    for (int i = max - 1; i > 0; i--) {
-        int i1 = FindMax(b, i);
-        Change(b, i, i1);
-    }
-}
-
-template <class T>
-void Array<T>::SortALL() {
-    for (int i = 0; i < ArrSize; i++) {
-        ListElem<T> *cur = Arr[i];
-        while(cur != nullptr) {
-            Sort(cur->objects,cur->countObj);
-            cur = cur->pNext;
-        }
-    }
-}
-
-template <class T>
-bool Array<T>::IsListFull(int index) {
-    if (index >= ArrSize) return true;
-    
-    int count = 0;
-    ListElem<T>* current = Arr[index];
-    while (current != nullptr) {
-        count += current->countObj;
-        current = current->pNext;
-    }
-    return count >= MaxCount;
-}
-
-// Функция добавления элемента по позиции
 template <class T>
 void Array<T>::AddElem(int position) {
     if (position <= 0) {
-        std::cout << "Incorrect position" << std::endl;
+        std::cout << "Invalid position" << std::endl;
         return;
     }
 
-    int index = 0;
-    int maxPosition = ArrSize * MaxCount;
-
-    if (position > maxPosition) {
-        std::cout << "The position exceeds the size of the structure" << std::endl;
-        return;
-    }
-
-    while (position > MaxCount) {
-        index++;
-        position -= MaxCount;
-    }
-
-    ListElem<T> *currentNode = Arr[index];
-
-    if (currentNode == nullptr) {
-        int elementCount = 0;
-        std::cout << "Enter count of elements=";
-        std::cin >> elementCount;
-
-        if (elementCount <= 0) {
-            std::cout << "Non of elements" << std::endl;
-            return;
-        }
-
-        ListElem<T> *newNode;
-
-        try {
-            newNode = new ListElem<T>;
-            newNode->countObj = elementCount;
-            newNode->objects = new T[elementCount];  // Выделение памяти для объектов
-
-            for (int i = 0; i < elementCount; i++) {
-                std::cout << "Enter element: ";
-                std::cin >> newNode->objects[i];
-            }
-
-            Arr[index] = newNode;
-            newNode->pNext = nullptr;
-            CurSize++;
-        } catch (std::bad_alloc &e) {
-            std::cerr << "Memory allocation failed: " << e.what() << std::endl;
-            if (newNode) {
-                delete[] newNode->objects;
-                delete newNode;
-            }
-            return;
-        }
-        return;
-    }
-
+    int index = (position - 1) / MaxCount;
     if (index >= ArrSize) {
-        AddElem(position); // Рекурсивный вызов для следующего индекса
+        std::cout << "Position exceeds array size" << std::endl;
         return;
     }
 
     if (IsListFull(index)) {
-        ListElem<T> *pcur = Arr[index];
-
-        while(pcur->pNext != nullptr) {
-            pcur = pcur->pNext;
-        }
-
-        int count = 0;
-        std::cout << "Enter count of elements=";
-        std::cin >> count;
-
-        if (count <= 0) {
-            std::cout << "Non of elements to add" << std::endl;
-            return;
-        }
-
-        ListElem<T>* NewElem;
-        try {
-            NewElem = new ListElem<T>;
-            NewElem->countObj = count;
-            NewElem->objects = new T[count];
-
-            for (int i = 0; i < count; i++) {
-                std::cout << "Enter element: ";
-                std::cin >> NewElem->objects[i];
-            }
-
-            pcur->pNext = NewElem;
-            NewElem->pNext = nullptr;
-            CurSize++;
-        } catch (std::bad_alloc& e) {
-            std::cerr << "Memory allocation failed: " << e.what() << std::endl;
-            if (NewElem) {
-                delete[] NewElem->objects;
-                delete NewElem;
-            }
-            return;
-        }
+        std::cout << "List at index " << index << " is full" << std::endl;
         return;
     }
 
-    if (position == 1) {
-        int count = 0;
-        std::cout << "Enter count of elements=";
-        std::cin >> count;
+    ListElem<T>* NewElem = InputNewElement();
+    if (!NewElem) return;
 
-        if (count <= 0) {
-            std::cout << "Non of elements" << std::endl;
-            return;
-        }
+    int localPos = position - (index * MaxCount);
 
-        ListElem<T>* NewElem;
-        try {
-            NewElem = new ListElem<T>;
-            NewElem->countObj = count;
-            NewElem->objects = new T[count];
-
-            for (int i = 0; i < count; i++) {
-                std::cout << "Enter element: ";
-                std::cin >> NewElem->objects[i];
-            }
-
-            NewElem->pNext = Arr[index];
-            Arr[index] = NewElem;
-            CurSize++;
-        } catch (std::bad_alloc& e) {
-            std::cerr << "Memory allocation failed: " << e.what() << std::endl;
-            if (NewElem) {
-                delete[] NewElem->objects;
-                delete NewElem;
-            }
-            return;
-        }
-        return;
-    } else {
-        int count = 0;
-        std::cout << "Enter count of elements=";
-        std::cin >> count;
-
-        if (count <= 0) {
-            std::cout << "Non of elements" << std::endl;
-            return;
-        }
-
-        ListElem<T>* NewElem;
-        try {
-            NewElem = new ListElem<T>;
-            NewElem->countObj = count;
-            NewElem->objects = new T[count];
-
-            for (int i = 0; i < count; i++) {
-                std::cout << "Enter element: ";
-                std::cin >> NewElem->objects[i];
-            }
-
-            ListElem<T>* cur = Arr[index];
-            ListElem<T>* pcur = Arr[index];
-            int posCount = 0;
-
-            while (cur != nullptr && posCount < position - 2) {
-                posCount++;
-                pcur = cur;
-                cur = cur->pNext;
-            }
-
-            if (pcur == nullptr) {
-                std::cout << "Position is out of range" << std::endl;
-                delete[] NewElem->objects;
-                delete NewElem;
-                return;
-            }
-
-            NewElem->pNext = cur;
-            pcur->pNext = NewElem;
-            CurSize++;
-        } catch (std::bad_alloc& e) {
-            std::cerr << "Memory allocation failed: " << e.what() << std::endl;
-            if (NewElem) {
-                delete[] NewElem->objects;
-                delete NewElem;
-            }
-            return;
-        }
-    }
-}
-
-
-// Функция удаления элемента с заданной позиции
-template <class T>
-void Array<T>::DelElem(int position) {
-    // Проверка валидности позиции
-    if (position <= 0) {
-        std::cout << "Incorrect position" << std::endl;
+    if (Arr[index] == nullptr) {
+        Arr[index] = NewElem;
         return;
     }
 
-    // Вычисление индекса и локальной позиции
-    int index = (position - 1) / MaxCount;
-    int localPos = position - index * MaxCount;
-
-    // Вычисление индекса и локальной позиции
-    if (index >= ArrSize || Arr[index] == nullptr) {
-        std::cout << "Element not found" << std::endl;
-        return;
-    }
-
-    // Удаление первого элемента
     if (localPos == 1) {
-        ListElem<T>* temp = Arr[index];  // Сохраняем первый элемент
-        Arr[index] = temp->pNext;  // Обновляем указатель на первый элемент
-        delete[] temp->objects;  // Освобождаем память для объектов
-        delete temp;  // Освобождаем память для самого узла
-        CurSize--;  // Уменьшаем общий размер
+        NewElem->pNext = Arr[index];
+        Arr[index] = NewElem;
         return;
     }
 
-    // Поиск элемента для удаления
     ListElem<T>* current = Arr[index];
     ListElem<T>* prev = nullptr;
-    int currentPos = 1;
+    int pos = 1;
 
-    while (current != nullptr && currentPos < localPos) {
+    while (current != nullptr && pos < localPos) {
         prev = current;
         current = current->pNext;
-        currentPos++;
+        pos++;
     }
 
-    // Проверка найден ли элемент
-    if (current == nullptr) {
-        std::cout << "Element not found" << std::endl;
+    if (prev != nullptr) {
+        prev->pNext = NewElem;
+        NewElem->pNext = current;
+    }
+}
+
+
+template <class T>
+void Array<T>::AddElementAtPosition(T element, int arrayIndex, int nodeIndex, int position) {
+    if (arrayIndex < 0 || arrayIndex >= ArrSize) {
+        std::cout << "Invalid array index" << std::endl;
         return;
     }
 
-    // Удаление элемента
-    prev->pNext = current->pNext;
-    delete[] current->objects;
-    delete current;
-    CurSize--;
+    if (nodeIndex <= 0) {
+        std::cout << "Invalid node index" << std::endl;
+        return;
+    }
+
+    if (position <= 0) {
+        std::cout << "Invalid position" << std::endl;
+        return;
+    }
+
+    ListElem<T>* current = Arr[arrayIndex];
+    // ListElem<T>* prev = nullptr;
+    int currentNode = 1;
+
+    while (current != nullptr && currentNode < nodeIndex) {
+        // prev = current;
+        current = current->pNext;
+        currentNode++;
+    }
+
+    if (current == nullptr) {
+        std::cout << "Node not found" << std::endl;
+        return;
+    }
+
+    try {
+        T* newObjects = new T[current->countObj + 1];
+
+        for(int i = 0; i < current->countObj + 1; i++) {
+            newObjects[i] = new char[100];
+        }
+
+        if (position > current->countObj) {
+            for (int i = 0; i < current->countObj; i++) {
+                strcpy(newObjects[i], current->objects[i]);
+            }
+            strcpy(newObjects[current->countObj], element);
+        } else {
+            for (int i = 0; i < position - 1; i++) {
+                strcpy(newObjects[i], current->objects[i]);
+            }
+            strcpy(newObjects[position - 1], element);
+            for (int i = position - 1; i < current->countObj; i++) {
+                strcpy(newObjects[i + 1], current->objects[i]);
+            }
+        }
+
+        for(int i = 0; i < current->countObj; i++) {
+            delete[] current->objects[i];
+        }
+        delete[] current->objects;
+
+        current->objects = newObjects;
+        current->countObj++;
+    }
+    catch (std::bad_alloc& e) {
+        std::cout << "Memory allocation failed" << std::endl;
+    }
 }
 
 
-// Функция вывода всех элементов
 template <class T>
-void Array<T>::ShowAll() {
-    bool hasElements = false;
+void Array<T>::AddToArrayIndex(int arrayIndex) {
+    if (arrayIndex < 0) {
+        std::cout << "Invalid array index" << std::endl;
+        return;
+    }
 
-    for (int i = 0; i <= pointer; i++) {
-        if (Arr[i] != nullptr) {
-            hasElements = true;
-            std::cout << " <<< Next Pointer-> >>> \n";
-            ListElem<T> *cur = Arr[i];
-            
-            while (cur != nullptr) {
-                std::cout << "Elem=";
-                for (int j = 0; j < cur->countObj; j++) {
-                    std::cout << cur->objects[j] << " ";
-                }
-                std::cout << "\n <<< Next list-> >>> \n";
-                cur = cur->pNext;
-            }
+    if (arrayIndex >= ArrSize) {
+        int newSize = std::max(arrayIndex + 1, ArrSize * RESIZE_FACTOR);
+        if (!ResizeArray(newSize)) {
+            std::cout << "Failed to resize array" << std::endl;
+            return;
         }
     }
 
-    if (!hasElements) {
-        std::cout << "The structure is empty" << std::endl;
+    int count;
+    std::cout << "Enter number of elements: ";
+    std::cin >> count;
+    if (count <= 0) {
+        std::cout << "Invalid count" << std::endl;
+        return;
+    }
+
+    ListElem<T>* NewElem = new ListElem<T>();
+    NewElem->objects = new T[count];
+    NewElem->countObj = count;
+    NewElem->capacity = count;
+
+    for(int i = 0; i < count; i++) {
+        NewElem->objects[i] = new char[100];
+        std::cout << "Enter element #" << (i + 1) << ": ";
+        std::cin >> NewElem->objects[i];
+    }
+
+    if (Arr[arrayIndex] == nullptr) {
+        Arr[arrayIndex] = NewElem;
+    } else {
+        ListElem<T>* current = Arr[arrayIndex];
+        while(current->pNext != nullptr) {
+            current = current->pNext;
+        }
+        current->pNext = NewElem;
     }
 }
 
 
-// Функция балансировки структуры данных
+template <class T>
+void Array<T>::AddToListNode(int arrayIndex, int nodeIndex) {
+    if (arrayIndex < 0 || arrayIndex >= ArrSize) {
+        std::cout << "Invalid array index" << std::endl;
+        return;
+    }
+
+    ListElem<T>* current = Arr[arrayIndex];
+    int currentNode = 1;
+    
+    while (current != nullptr && currentNode < nodeIndex) {
+        current = current->pNext;
+        currentNode++;
+    }
+
+    if (current == nullptr) {
+        std::cout << "Node not found" << std::endl;
+        return;
+    }
+
+    int count;
+    std::cout << "Enter number of elements to add: ";
+    std::cin >> count;
+    if (count <= 0) {
+        std::cout << "Invalid count" << std::endl;
+        return;
+    }
+
+    if (current->countObj + count > current->capacity) {
+        int newCapacity = std::max(current->countObj + count, 
+                                 current->capacity * RESIZE_FACTOR);
+        if (!current->ResizeNode(newCapacity)) {
+            std::cout << "Failed to resize node" << std::endl;
+            return;
+        }
+    }
+
+    for(int i = 0; i < count; i++) {
+        current->objects[current->countObj + i] = new char[100];
+        std::cout << "Enter element #" << (i + 1) << ": ";
+        std::cin >> current->objects[current->countObj + i];
+    }
+    current->countObj += count;
+}
+
+
+
+// 4. Операции удаления
+template <class T>
+void Array<T>::DelElem(int arrayIndex, int nodeIndex, int position) {
+    if (arrayIndex < 0 || arrayIndex >= ArrSize) {
+        std::cout << "Invalid array index" << std::endl;
+        return;
+    }
+
+    if (nodeIndex <= 0) {
+        std::cout << "Invalid node index" << std::endl;
+        return;
+    }
+
+    if (position <= 0) {
+        std::cout << "Invalid position" << std::endl;
+        return;
+    }
+
+    ListElem<T>* current = Arr[arrayIndex];
+    int currentNode = 1;
+
+    while (current != nullptr && currentNode < nodeIndex) {
+        current = current->pNext;
+        currentNode++;
+    }
+
+    if (current == nullptr) {
+        std::cout << "Node not found" << std::endl;
+        return;
+    }
+
+    if (position > current->countObj) {
+        std::cout << "Position exceeds node size" << std::endl;
+        return;
+    }
+
+    T* newObjects = new T[current->countObj - 1];
+
+    for (int i = 0; i < position - 1; i++) {
+        newObjects[i] = new char[strlen(current->objects[i]) + 1];
+        strcpy(newObjects[i], current->objects[i]);
+    }
+
+    for (int i = position; i < current->countObj; i++) {
+        newObjects[i - 1] = new char[strlen(current->objects[i]) + 1];
+        strcpy(newObjects[i - 1], current->objects[i]);
+    }
+
+    for (int i = 0; i < current->countObj; i++) {
+        delete[] current->objects[i];
+    }
+    delete[] current->objects;
+
+    current->objects = newObjects;
+    current->countObj--;
+}
+
+
+template <class T>
+void Array<T>::DelElemRange(int arrayIndex, int nodeIndex, int startPos, int endPos) {
+    if (arrayIndex < 0 || arrayIndex >= ArrSize) {
+        std::cout << "Invalid array index" << std::endl;
+        return;
+    }
+
+    if (nodeIndex <= 0) {
+        std::cout << "Invalid node index" << std::endl;
+        return;
+    }
+
+    if (startPos <= 0 || endPos <= 0 || startPos > endPos) {
+        std::cout << "Invalid range" << std::endl;
+        return;
+    }
+
+    ListElem<T>* current = Arr[arrayIndex];
+    if (current == nullptr) {
+        std::cout << "Node not found" << std::endl;
+        return;
+    }
+
+    int currentNode = 1;
+    while (current != nullptr && currentNode < nodeIndex) {
+        current = current->pNext;
+        currentNode++;
+    }
+
+    if (current == nullptr) {
+        std::cout << "Node not found" << std::endl;
+        return;
+    }
+
+    if (startPos > current->countObj || endPos > current->countObj) {
+        std::cout << "Position exceeds node size" << std::endl;
+        return;
+    }
+
+    int elementsToDelete = endPos - startPos + 1;
+    int newSize = current->countObj - elementsToDelete;
+    
+    if (newSize <= 0) {
+        for (int i = 0; i < current->countObj; i++) {
+            delete[] current->objects[i];
+        }
+        delete[] current->objects;
+        current->objects = nullptr;
+        current->countObj = 0;
+        return;
+    }
+
+    T* newObjects = new T[newSize];
+
+    int newIndex = 0;
+    for (int i = 0; i < startPos - 1; i++) {
+        newObjects[newIndex] = new char[strlen(current->objects[i]) + 1];
+        strcpy(newObjects[newIndex++], current->objects[i]);
+    }
+
+    for (int i = endPos; i < current->countObj; i++) {
+        newObjects[newIndex] = new char[strlen(current->objects[i]) + 1];
+        strcpy(newObjects[newIndex++], current->objects[i]);
+    }
+
+    for (int i = 0; i < current->countObj; i++) {
+        delete[] current->objects[i];
+    }
+    delete[] current->objects;
+
+    current->objects = newObjects;
+    current->countObj = newSize;
+}
+
+
+
+// 5. Операции отображения и подсчета
+template <class T>
+void Array<T>::ShowAll() {
+    for (int i = 0; i < ArrSize; i++) {
+        if (Arr[i] == nullptr) {
+            std::cout << "Array Index [" << i << "] is empty.\n";
+            continue;
+        }
+
+        std::cout << "Array Index [" << i << "]\n";
+
+        ListElem<T>* cur = Arr[i];
+        while (cur != nullptr) {
+            std::cout << "  List Node: ";
+            for (int j = 0; j < cur->countObj; j++) {
+                std::cout << cur->objects[j] << " ";
+            }
+            std::cout << "\n";
+            cur = cur->pNext;
+        }
+        std::cout << "\n";
+    }
+}
+
+
+template <class T>
+int Array<T>::CountTotalElements() {
+    int total = 0;
+    for (int i = 0; i < ArrSize; i++) {
+        ListElem<T>* current = Arr[i];
+        while (current != nullptr) {
+            total += current->countObj;
+            current = current->pNext;
+        }
+    }
+    return total;
+}
+
+
+
+// 6. Операции сортировки и балансировки
+template <class T>
+void Array<T>::SortALL() {
+    for (int i = 0; i < ArrSize; i++) {
+        if (Arr[i] == nullptr) continue;
+
+        ListElem<T>* current = Arr[i];
+        while (current != nullptr) {
+            for (int j = 0; j < current->countObj - 1; j++) {
+                for (int k = 0; k < current->countObj - j - 1; k++) {
+                    int num1 = atoi(current->objects[k]);
+                    int num2 = atoi(current->objects[k + 1]);
+                    
+                    if (num1 > num2) {
+                        char* temp = current->objects[k];
+                        current->objects[k] = current->objects[k + 1];
+                        current->objects[k + 1] = temp;
+                    }
+                }
+            }
+            current = current->pNext;
+        }
+    }
+}
+
+
 template <class T>
 void Array<T>::Balance() {
     if (ArrSize <= 0) return;
 
-    // Подсчет общего числа элементов
-    int totalElements = 0;
-    for (int i = 0; i < ArrSize; ++i) {
-        ListElem<T> *cur = Arr[i];
-        while (cur != nullptr) {
-            totalElements += cur->countObj;
-            cur = cur->pNext;
-        }
-    }
-
-    // Если массив пуст, нет необходимости в балансировке
+    int totalElements = CountTotalElements();
     if (totalElements == 0) return;
 
-    // Новый максимальный размер для элементов
-    int newMaxCount = (totalElements + ArrSize - 1) / ArrSize;
-
-    // Новый массив для хранения сбалансированных элементов
-    ListElem<T> **newArr;
     try {
-        newArr = new ListElem<T>*[ArrSize];
-        for (int i = 0; i < ArrSize; ++i) {
-            newArr[i] = nullptr;
-        }
-    } catch (const std::bad_alloc& e) {
-        std::cerr << "Memory allocation failed." << e.what() << std::endl;
-        return;
-    }
+        T* allElements = new T[totalElements];
+        int currentIndex = 0;
 
-    int currentIndex = 0;
-    int currentCount = 0;
-    ListElem<T> *currentElem = nullptr;
-
-    // Перенос элементов из старого массива в новый
-    for (int i = 0; i < ArrSize && currentIndex < ArrSize; ++i) {
-        ListElem<T> *cur = Arr[i];
-        while (cur != nullptr) {
-            for (int j = 0; j < cur->countObj && currentIndex < ArrSize; ++j) {
-                // Проверка на заполнение текущего элемента
-                if (currentCount >= newMaxCount) {
+        for (int i = 0; i < ArrSize; i++) {
+            ListElem<T>* current = Arr[i];
+            while (current != nullptr) {
+                for (int j = 0; j < current->countObj; j++) {
+                    allElements[currentIndex] = new char[strlen(current->objects[j]) + 1];
+                    strcpy(allElements[currentIndex], current->objects[j]);
                     currentIndex++;
-                    if (currentIndex >= ArrSize) break;
-                    currentCount = 0;
-                    currentElem = nullptr;
                 }
+                current = current->pNext;
+            }
+        }
 
-                // Если новый элемент еще не создан, создаем его
-                if (currentElem == nullptr) {
-                    currentElem = new ListElem<T>;
-                    currentElem->countObj = 0;
-                    currentElem->objects = new T[newMaxCount];
-                    currentElem->pNext = nullptr;
-                    newArr[currentIndex] = currentElem;
+        for (int i = 0; i < ArrSize; i++) {
+            ListElem<T>* current = Arr[i];
+            while (current != nullptr) {
+                ListElem<T>* next = current->pNext;
+                for(int j = 0; j < current->countObj; j++) {
+                    delete[] current->objects[j];
                 }
+                delete[] current->objects;
+                delete current;
+                current = next;
+            }
+            Arr[i] = nullptr;
+        }
 
-                // Перенос объекта в новый элемент
-                currentElem->objects[currentCount] = cur->objects[j];
-                currentCount++;
-                currentElem->countObj = currentCount;
+        int elementsPerNode = 3;
+        int nodesCount = (totalElements + elementsPerNode - 1) / elementsPerNode;
+
+        currentIndex = 0;
+        for (int i = 0; i < nodesCount && currentIndex < totalElements; i++) {
+            int arrayIndex = i % ArrSize;
+            int elementsInThisNode = std::min(elementsPerNode, totalElements - currentIndex);
+
+            ListElem<T>* newNode = new ListElem<T>;
+            newNode->objects = new T[elementsInThisNode];
+            newNode->countObj = elementsInThisNode;
+            newNode->pNext = nullptr;
+
+            for (int j = 0; j < elementsInThisNode; j++) {
+                newNode->objects[j] = new char[strlen(allElements[currentIndex + j]) + 1];
+                strcpy(newNode->objects[j], allElements[currentIndex + j]);
             }
 
-            // Очистка старого элемента
-            ListElem<T> *temp = cur;
-            cur = cur->pNext;
-            delete[] temp->objects;
-            delete temp;
+            if (Arr[arrayIndex] == nullptr) {
+                Arr[arrayIndex] = newNode;
+            } else {
+                ListElem<T>* current = Arr[arrayIndex];
+                while (current->pNext != nullptr) {
+                    current = current->pNext;
+                }
+                current->pNext = newNode;
+            }
+
+            currentIndex += elementsInThisNode;
         }
-        Arr[i] = nullptr;
+
+        for (int i = 0; i < totalElements; i++) {
+            delete[] allElements[i];
+        }
+        delete[] allElements;
+
+    } catch (std::bad_alloc& e) {
+        std::cout << "Memory allocation failed during balance" << std::endl;
     }
-
-    // Очистка старого массива и обновление указателей
-    delete[] Arr;
-    Arr = newArr;
-
-    CurSize = (totalElements + newMaxCount - 1) / newMaxCount;
-    MaxCount = newMaxCount;
-    pointer = (CurSize > 0) ? CurSize - 1 : 0;
 }
 
 
 
 
-// Функция сохранения структуры данных в файл
+
+
+
+
+
+
+
+// 7. Файловые операции
 template <class T>
 void Array<T>::SaveToFile(const char* filename) {
     std::ofstream outFile(filename, std::ios::binary);
     if (!outFile) {
-        std::cerr << "Error opening the file for writing: " << filename << std::endl;
+        std::cerr << "Error opening file for writing" << std::endl;
         return;
     }
 
-    try {
-        // Записываем размеры структуры
-        outFile.write(reinterpret_cast<const char*>(&ArrSize), sizeof(ArrSize));
-        outFile.write(reinterpret_cast<const char*>(&MaxCount), sizeof(MaxCount));
-        outFile.write(reinterpret_cast<const char*>(&CurSize), sizeof(CurSize));
-        outFile.write(reinterpret_cast<const char*>(&pointer), sizeof(pointer));
-
-        // Записываем данные каждого списка
-        for (int i = 0; i < ArrSize; ++i) {
-            ListElem<T>* cur = Arr[i];
-            bool hasNext = (cur != nullptr);
-            outFile.write(reinterpret_cast<const char*>(&hasNext), sizeof(hasNext));
-
-            while (cur != nullptr) {
-                cur->serialize(outFile);
-                cur = cur->pNext;
-                hasNext = (cur != nullptr);
-                outFile.write(reinterpret_cast<const char*>(&hasNext), sizeof(hasNext));
+    // Запись размера структуры
+    size_t totalSize = sizeof(int) * 2; // ArrSize + MaxCount
+    for (int i = 0; i < ArrSize; i++) {
+        ListElem<T>* current = Arr[i];
+        while (current != nullptr) {
+            totalSize += sizeof(int); // countObj
+            for (int j = 0; j < current->countObj; j++) {
+                totalSize += sizeof(size_t) + strlen(current->objects[j]); 
             }
+            totalSize += sizeof(bool); // hasNext
+            current = current->pNext;
         }
-    } catch (const std::exception& e) {
-        std::cerr << "Error when writing to a file: " << e.what() << std::endl;
     }
+    outFile.write(reinterpret_cast<const char*>(&totalSize), sizeof(size_t));
 
+    // Запись размеров Array
+    outFile.write(reinterpret_cast<const char*>(&ArrSize), sizeof(int));
+    outFile.write(reinterpret_cast<const char*>(&MaxCount), sizeof(int));
+
+    // Запись данных
+    for (int i = 0; i < ArrSize; i++) {
+        ListElem<T>* current = Arr[i];
+        while (current != nullptr) {
+            current->serialize(outFile);
+            bool hasNext = (current->pNext != nullptr);
+            outFile.write(reinterpret_cast<const char*>(&hasNext), sizeof(bool));
+            current = current->pNext;
+        }
+    }
     outFile.close();
 }
 
-// Функция загрузки структуры данных из файла
+
 template <class T>
 void Array<T>::LoadFromFile(const char* filename) {
     std::ifstream inFile(filename, std::ios::binary);
     if (!inFile) {
-        std::cerr << "Error opening the file for reading: " << filename << std::endl;
+        std::cerr << "Error opening file for reading" << std::endl;
         return;
     }
 
-    // Очищаем текущую структуру
-    for (int i = 0; i < ArrSize; ++i) {
-        while (Arr[i] != nullptr) {
-            ListElem<T>* temp = Arr[i];
-            Arr[i] = Arr[i]->pNext;
-            delete[] temp->objects;
-            delete temp;
+    // Чтение размера
+    size_t totalSize;
+    inFile.read(reinterpret_cast<char*>(&totalSize), sizeof(size_t));
+
+    // Очистка и чтение размеров
+    this->~Array();
+    inFile.read(reinterpret_cast<char*>(&ArrSize), sizeof(int));
+    inFile.read(reinterpret_cast<char*>(&MaxCount), sizeof(int));
+
+    // Создание новой структуры
+    Arr = new ListElem<T>*[ArrSize];
+    for (int i = 0; i < ArrSize; i++) {
+        Arr[i] = nullptr;
+        ListElem<T>* last = nullptr;
+        bool hasNext = true;
+
+        while (hasNext && inFile.tellg() < totalSize) {
+            ListElem<T>* newNode = new ListElem<T>();
+            newNode->deserialize(inFile);
+            
+            if (Arr[i] == nullptr) Arr[i] = newNode;
+            else last->pNext = newNode;
+            last = newNode;
+            
+            inFile.read(reinterpret_cast<char*>(&hasNext), sizeof(bool));
         }
     }
-    delete[] Arr;
-
-    try {
-        // Читаем размеры структуры
-        inFile.read(reinterpret_cast<char*>(&ArrSize), sizeof(ArrSize));
-        inFile.read(reinterpret_cast<char*>(&MaxCount), sizeof(MaxCount));
-        inFile.read(reinterpret_cast<char*>(&CurSize), sizeof(CurSize));
-        inFile.read(reinterpret_cast<char*>(&pointer), sizeof(pointer));
-
-        // Создаем новую структуру
-        Arr = new ListElem<T>*[ArrSize];
-        for (int i = 0; i < ArrSize; ++i) {
-            Arr[i] = nullptr;
-        }
-
-        // Читаем данные каждого списка
-        for (int i = 0; i < ArrSize; ++i) {
-            bool hasNext;
-            inFile.read(reinterpret_cast<char*>(&hasNext), sizeof(hasNext));
-
-            ListElem<T>** current = &Arr[i];
-            while (hasNext) {
-                *current = new ListElem<T>;
-                (*current)->deserialize(inFile);
-                current = &((*current)->pNext);
-                inFile.read(reinterpret_cast<char*>(&hasNext), sizeof(hasNext));
-            }
-            *current = nullptr;
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "Ошибка при чтении из файла: " << e.what() << std::endl;
-
-        // Очищаем структуру в случае ошибки
-        for (int i = 0; i < ArrSize; ++i) {
-            while (Arr[i] != nullptr) {
-                ListElem<T>* temp = Arr[i];
-                Arr[i] = Arr[i]->pNext;
-                delete[] temp->objects;
-                delete temp;
-            }
-        }
-        delete[] Arr;
-        Arr = nullptr;
-    }
-
     inFile.close();
 }
-
-

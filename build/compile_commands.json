@@ -10,5 +10,11 @@
   "command": "C:\\msys64\\mingw64\\bin\\g++.exe -ID:/kursovaya_C++/include -g -std=gnu++11 -o CMakeFiles\\kursovaya_C++.dir\\src\\Array.cpp.obj -c D:\\kursovaya_C++\\src\\Array.cpp",
   "file": "D:\\kursovaya_C++\\src\\Array.cpp",
   "output": "CMakeFiles\\kursovaya_C++.dir\\src\\Array.cpp.obj"
+},
+{
+  "directory": "D:/kursovaya_C++/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -ID:/kursovaya_C++/include -g -std=gnu++11 -o CMakeFiles\\kursovaya_C++.dir\\src\\ListElem.cpp.obj -c D:\\kursovaya_C++\\src\\ListElem.cpp",
+  "file": "D:\\kursovaya_C++\\src\\ListElem.cpp",
+  "output": "CMakeFiles\\kursovaya_C++.dir\\src\\ListElem.cpp.obj"
 }
 ]

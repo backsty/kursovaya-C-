@@ -9,10 +9,27 @@ template <class T>
 struct ListElem {
     T* objects;
     int countObj;
+    int capacity;
     ListElem<T>* pNext;
 
-    ListElem() : objects(nullptr), countObj(0), pNext(nullptr) {}
+    ListElem() : objects(nullptr), countObj(0), capacity(0), pNext(nullptr) {}
     ~ListElem() { delete[] objects; }
+
+    bool ResizeNode(int newSize) {
+        try {
+            T* newObjects = new T[newSize];
+            for(int i = 0; i < countObj; i++) {
+                newObjects[i] = objects[i];
+            }
+            delete[] objects;
+            objects = newObjects;
+            capacity = newSize;
+            return true;
+        }
+        catch(std::bad_alloc& e) {
+            return false;
+        }
+    }
 
     // Базовые версии для не-char* типов
     void serialize(std::ofstream &outFile) {

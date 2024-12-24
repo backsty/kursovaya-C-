@@ -5,9 +5,9 @@ template <>
 void ListElem<char*>::serialize(std::ofstream &outFile) {
     outFile.write(reinterpret_cast<const char*>(&countObj), sizeof(countObj));
     for(int i = 0; i < countObj; i++) {
-        int length = strlen(objects[i]);
+        size_t length = objects[i] ? strlen(objects[i]) : 0;
         outFile.write(reinterpret_cast<const char*>(&length), sizeof(length));
-        outFile.write(objects[i], length);
+        outFile.write(objects[i], static_cast<std::streamsize>(length));
     }
 }
 

@@ -10,24 +10,34 @@ template <class T>
 class Array {
 public:
     Array();
-    Array(int size, int MaxSize);
+    explicit Array(int size = 10, int MaxSize = 3);
     ~Array();
 
     void AddElem();
     void AddElem(int position);
-    void DelElem(int position);
-    void SortALL();
+    void AddElementAtPosition(T element, int arrayIndex, int nodeIndex, int position);
+    void AddToArrayIndex(int arrayIndex);
+    void AddToListNode(int arrayIndex, int nodeIndex);
+    bool ResizeArray(int newSize);
+    
+    void DelElem(int arrayIndex, int nodeIndex, int position);
+    void DelElemRange(int arrayIndex, int nodeIndex, int startPos, int endPos);
+    
     void ShowAll();
+    int CountTotalElements();
+    
+    void SortALL();
     void Balance();
+    
     void SaveToFile(const char* filename);
     void LoadFromFile(const char* filename);
 
 private:
     ListElem<T> **Arr;
+    ListElem<T>* InputNewElement();
     bool IsListFull(int index);
-    void Change(T a[], int first, int second);
-    int FindMax(T a[], int max);
-    void Sort(T b[], int max);
+
+    static const int RESIZE_FACTOR = 2;
 
     int MaxCount;   // Максимальная длина списка
     int CurSize;    // Текущий размер односвязного списка
