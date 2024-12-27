@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(SOURCES
         src/main.cpp
-        src/Array.cpp
-        src/ListElem.cpp
+        src/PointersArray.cpp
+        src/PointersList.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
