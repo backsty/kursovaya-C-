@@ -109,6 +109,48 @@ T* PointersList<T>::get(int position) {
     return current->data;
 }
 
+//template<>
+//void PointersList<char*>::sort_list() {
+//    if (!head || !head->next) return;
+//    bool sorted = false;
+//
+//    do {
+//        sorted = true;
+//        Node<char*>* current = head;
+//
+//        while (current->next) {
+//            if (strcmp(*(current->data), *(current->next->data)) > 0) {
+//                char** temp = current->data;
+//                current->data = current->next->data;
+//                current->next->data = temp;
+//                sorted = false;
+//            }
+//            current = current->next;
+//        }
+//    } while (!sorted);
+//}
+
+template<typename T>
+void PointersList<T>::sort_list() {
+    if (!head || !head->next) return;
+    bool sorted = false;
+
+    do {
+        sorted = true;
+        Node<char*>* current = head;
+
+        while (current->next) {
+            if (current->data > current->next->data) {
+                char** temp = current->data;
+                current->data = current->next->data;
+                current->next->data = temp;
+                sorted = false;
+            }
+            current = current->next;
+        }
+    } while (!sorted);
+}
+
 template<>
 void PointersList<char*>::sort_list() {
     if (!head || !head->next) return;
@@ -129,5 +171,6 @@ void PointersList<char*>::sort_list() {
         }
     } while (!sorted);
 }
+
 
 template class PointersList<char*>;
